@@ -16,9 +16,11 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+// ce class permet de gerer le serveur
 public class Server extends javax.swing.JFrame {
 
     ServerSocket ss;
+    // HashMap pour stocker les clients
     HashMap clientColl=new HashMap();
 
     public Server() {
@@ -26,13 +28,14 @@ public class Server extends javax.swing.JFrame {
             initComponents();
             ss=new ServerSocket(4400);
             this.sStatus.setText("Server Started");
-
+            // lance le thread pour accepter les clients
             new ClientAccept().start();
 
         }catch(Exception ex){
             ex.printStackTrace();
         }
     }
+    // ce thread permet d'accepter les clients a chaque fois qu'un client se connecte
     class ClientAccept extends Thread{
         public void run(){
             while(true){
@@ -43,12 +46,15 @@ public class Server extends javax.swing.JFrame {
                         DataOutputStream data=new DataOutputStream(s.getOutputStream());
                         data.writeUTF("Vous êtes déjà inscrit!!!");
                     }else{
+                        // ajoute le client dans le HashMap
                         clientColl.put(i,s);
+                        // afficher un message dans le serveur pour dire que le client est connecté
                         msgBox.append(i+" Join!\n");
-                        // ?
                         DataOutputStream data=new DataOutputStream(s.getOutputStream());
                         data.writeUTF("");
+                        // lance le thread pour recevoir les messages du client
                         new MsgRead(s,i).start();
+                        // lancer le thread pour preparer la liste des clients connectés et l'envoyer au client
                         new PrepareClientList().start();
                     }
                 }catch(Exception ex){
@@ -57,6 +63,7 @@ public class Server extends javax.swing.JFrame {
             }
         }
     }
+    // ce class interne c est un Thread pour lire les messages du client
     class MsgRead extends Thread{
         Socket s;
         String ID;
@@ -66,12 +73,16 @@ public class Server extends javax.swing.JFrame {
             this.ID=ID;
         }
         public void run(){
+            // tant que il ya des clients connectés au serveur on envoie et on reçoit les messages
             while(!clientColl.isEmpty()){
                 try{
+                    // lire le message du client
                     String i=new DataInputStream(s.getInputStream()).readUTF();
+                    // le client a quitte le chat en fermant la fenetre
                     if(i.equals("formWindowClosing")){
                         clientColl.remove(ID);
                         msgBox.append(ID+" removed! \n");
+                        // lancer le thread pour preparer la liste des clients connectés et l'envoyer a tous les clients
                         new PrepareClientList().start();
                         Set<String> k=clientColl.keySet();
                         Iterator itr=k.iterator();
@@ -89,16 +100,19 @@ public class Server extends javax.swing.JFrame {
                             }
                         }
                     }
+                    // le client veut envoyer un fichier
                     else if(i.contains("envoie fichier")){
                         String CI=(new DataInputStream(s.getInputStream()).readUTF());
-
+                        // recuperer la longueur du fichier et l extension du fichier
                         String extension = (new DataInputStream(s.getInputStream()).readUTF());
                         String size = (new DataInputStream(s.getInputStream()).readUTF());
                         int FILE_SIZE = (Integer.parseInt(size))+1;
                         System.out.println("size: " + FILE_SIZE);
+                        // lire le fichier
                         int bytesRead;
                         int bytesReaded = 0;
                         byte[] mybytearray = new byte[FILE_SIZE];
+                        // telecharger le fichier dans le serveur dans ce chemin
                         String FILE_TO_RECEIVED = "C:\\Users\\DELL\\Downloads\\L." + extension;
                         InputStream is = s.getInputStream();
                         FileOutputStream fileOutputStream = new FileOutputStream(FILE_TO_RECEIVED);
@@ -107,29 +121,28 @@ public class Server extends javax.swing.JFrame {
 //                        bytesReaded = bytesRead;
                         while (bytesRead != -1 ) {
                             System.out.println("bytes:"+bytesRead);
-                            // Write the buffer to the file output stream
                             fileOutputStream.write(mybytearray, 0, bytesRead+1);
                             if(bytesRead==(FILE_SIZE-1)){
                                 break;
                             }else{
-                                // Read the next chunk of the file
+
                                 bytesRead = is.read(mybytearray);
                             }
 
                         }
+                        // dormir le thread pour attendre que le fichier soit telecharger
                         sleep(2000);
-                        System.out.println("hello");
+
                         System.out.println("Fichier " + FILE_TO_RECEIVED
                                 + " telecharge avec succes  (" + bytesReaded + " bytes lit)");
+                        // envoyer le fichier a un client specifique
                         if (!CI.isEmpty()) {
                             new DataOutputStream(((Socket)clientColl.get(CI)).getOutputStream()).writeUTF("< "+ID+" a t envoye un fichier>veuillez consultez vos dossiers ");
                             File myFile = new File(FILE_TO_RECEIVED);
                             System.out.println("file lenget: "+myFile.length());
                             byte[] mybytearray1 = new byte[(int) myFile.length()];
                             String fileName = myFile.getName();
-                            // Find the index of the last '.' character in the file name
                             int lastDotIndex = fileName.lastIndexOf('.');
-                            // Extract the extension from the file name
                             String extension1 = fileName.substring(lastDotIndex + 1);
                             new DataOutputStream(((Socket)clientColl.get(CI)).getOutputStream()).writeUTF(extension1);
                             new DataOutputStream(((Socket)clientColl.get(CI)).getOutputStream()).writeUTF(String.valueOf(myFile.length()));
@@ -142,16 +155,16 @@ public class Server extends javax.swing.JFrame {
                             System.out.println("Envoi du fichier " + myFile.length());
                             outputStream.write(mybytearray, 0, mybytearray.length);
                             outputStream.flush();
-                        }else{
+                        }
+                        // envoie a tous les clients
+                        else{
                             Set k = clientColl.keySet();
                             Iterator itr = k.iterator();
                             File myFile = new File(FILE_TO_RECEIVED);
                             System.out.println("file lenget: "+myFile.length());
                             byte[] mybytearray1 = new byte[(int) myFile.length()];
                             String fileName = myFile.getName();
-                            // Find the index of the last '.' character in the file name
                             int lastDotIndex = fileName.lastIndexOf('.');
-                            // Extract the extension from the file name
                             String extension1 = fileName.substring(lastDotIndex + 1);
                             while (itr.hasNext()) {
                                 String key = (String) itr.next();
@@ -176,6 +189,7 @@ public class Server extends javax.swing.JFrame {
                             }
                         }
                     }
+                    // message normale vers un client
                     else if(i.contains("envoie a un client")){
                         i=i.substring(18);
                         StringTokenizer  st=new StringTokenizer(i,":");
@@ -189,6 +203,7 @@ public class Server extends javax.swing.JFrame {
                             new PrepareClientList().start();
                         }
                     }
+                    // l envoie d un message normale a tous les clients
                     else{
                         Set k=clientColl.keySet();
                         Iterator itr=k.iterator();
@@ -211,6 +226,7 @@ public class Server extends javax.swing.JFrame {
             }
         }
     }
+    // classe pour preparer la liste des clients et l envoyer a tous les clients
     class PrepareClientList extends Thread{
         public void run(){
             try{

@@ -21,6 +21,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+// Class MyClient qui est l interface graphique du client apres la connexion avec le serveur
 public class MyClient extends javax.swing.JFrame {
     String iD,clientID="";
     Socket s;
@@ -69,13 +70,11 @@ public class MyClient extends javax.swing.JFrame {
                         bytesRead = is.read(mybytearray);
 //                        bytesReaded = bytesRead;
                         while (bytesRead != -1) {
-                            // Write the buffer to the file output stream
                             fileOutputStream.write(mybytearray, 0, bytesRead + 1);
 
                             if (bytesRead == (FILE_SIZE - 1)) {
                                 break;
                             } else {
-                                // Read the next chunk of the file
                                 bytesRead = is.read(mybytearray);
                             }
                         }
@@ -93,17 +92,14 @@ public class MyClient extends javax.swing.JFrame {
                         String FILE_TO_RECEIVED = "C:\\Users\\DELL\\Desktop\\L." + extension;
                         InputStream is = s.getInputStream();
                         FileOutputStream fileOutputStream = new FileOutputStream(FILE_TO_RECEIVED);
-//                        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
                         bytesRead = is.read(mybytearray);
 //                        bytesReaded = bytesRead;
                         while (bytesRead != -1) {
-                            // Write the buffer to the file output stream
                             fileOutputStream.write(mybytearray, 0, bytesRead + 1);
 
                             if (bytesRead == (FILE_SIZE - 1)) {
                                 break;
                             } else {
-                                // Read the next chunk of the file
                                 bytesRead = is.read(mybytearray);
                             }
                         }
@@ -311,11 +307,8 @@ public class MyClient extends javax.swing.JFrame {
                     m="envoie fichier";
                     dous.writeUTF(m);
                     dous.writeUTF(CI);
-                    // Get the file name
                     String fileName = myfile.getName();
-                    // Find the index of the last '.' character in the file name
                     int lastDotIndex = fileName.lastIndexOf('.');
-                    // Extract the extension from the file name
                     String extension = fileName.substring(lastDotIndex + 1);
                     dous.writeUTF(extension);
                     dous.writeUTF(String.valueOf(myfile.length()));
@@ -335,11 +328,8 @@ public class MyClient extends javax.swing.JFrame {
                     m="envoie fichier";
                     dous.writeUTF(m);
                     dous.writeUTF(CI);
-                    // Get the file name
                     String fileName = myfile.getName();
-                    // Find the index of the last '.' character in the file name
                     int lastDotIndex = fileName.lastIndexOf('.');
-                    // Extract the extension from the file name
                     String extension = fileName.substring(lastDotIndex + 1);
                     dous.writeUTF(extension);
                     dous.writeUTF(String.valueOf(myfile.length()));
